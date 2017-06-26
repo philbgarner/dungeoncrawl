@@ -1,0 +1,1 @@
+xcopy ..\SkinUI\lib .\lib /Y
