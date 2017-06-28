@@ -7,7 +7,11 @@ skinui = require 'lib.SkinUI'
 
 local Player = require 'Player'
 local Mobiles = require 'Mobile'
-local mapdata = require 'dungeon'
+mapdata = {}
+Area = require "Area"
+local World = require 'World'
+
+local worldControl = nil
 
 local screenShotter = require 'Screenshotter.capture'
 
@@ -76,7 +80,7 @@ end
 function getTile(x, y, l)
   if not l then l = 1 end
   if x == nil or y == nil or x < 0 or y < 0 then return -1 end
-  if x > mapdata.layers[l].width or y > mapdata.layers[l].height then return nil end
+  if x > mapdata.layers[l].width or y > mapdata.layers[l].height then return -1 end
   
   return mapdata.layers[l].data[(y * mapdata.layers[l].width) + x + 1]
 
@@ -85,9 +89,14 @@ end
 function getMobCell(x, y)
   l = 2
   if x == nil or y == nil or x < 0 or y < 0 then return -1 end
-  if x > mapdata.layers[l].width or y > mapdata.layers[l].height then return nil end
+  if x > mapdata.layers[l].width or y > mapdata.layers[l].height then return -1 end
   
-  return mapdata.layers[l].data[(y * mapdata.layers[l].width) + x + 1]
+  local ret = mapdata.layers[l].data[(y * mapdata.layers[l].width) + x + 1]
+  if ret then
+    return ret
+  else
+    return 0
+  end
 
 end
 function setMobCell(x, y, v)
@@ -278,22 +287,22 @@ function drawView()
   drawTile(tilemapping[midRight], 2, 3)
   drawTile(tilemapping[midMiddle], 2, 4)
   
-  if mob_midFarLeft and mob_midFarLeft ~= 0 then mob_midFarLeft:draw(3, 4) end
-  if mob_midFarRight and mob_midFarRight ~= 0 then mob_midFarRight:draw(3, 6) end
-  if mob_midLeft and mob_midLeft ~= 0 then mob_midLeft:draw(2, 1) end
-  if mob_midMiddle and mob_midMiddle ~= 0 then mob_midMiddle:draw(2, 2) end
-  if mob_midRight and mob_midRight ~= 0 then mob_midRight:draw(2, 3) end
-  if mob_midMiddle and mob_midMiddle ~= 0 then mob_midMiddle:draw(2, 4) end
+  if mob_midFarLeft and type(mob_midFarLeft) == "table" then mob_midFarLeft:draw(3, 4) end
+  if mob_midFarRight and type(mob_midFarRight) == "table" then mob_midFarRight:draw(3, 6) end
+  if mob_midLeft and type(mob_midLeft) == "table" then mob_midLeft:draw(2, 1) end
+  if mob_midMiddle and type(mob_midMiddle) == "table" then mob_midMiddle:draw(2, 2) end
+  if mob_midRight and type(mob_midRight) == "table" then mob_midRight:draw(2, 3) end
+  if mob_midMiddle and type(mob_midMiddle) == "table" then mob_midMiddle:draw(2, 4) end
   
   drawTile(tilemapping[nearLeft], 1, 1)
   drawTile(tilemapping[nearMiddle], 1, 2)
   drawTile(tilemapping[nearRight], 1, 3)
   drawTile(tilemapping[nearMiddle], 1, 4)
 
-  if mob_nearLeft and mob_nearLeft ~= 0 then mob_nearLeft:draw(1, 1) end
-  if mob_nearMiddle and mob_nearMiddle ~= 0 then mob_nearMiddle:draw(1, 2) end
-  if mob_nearRight and mob_nearRight ~= 0 then mob_nearRight:draw(1, 3) end
-  if mob_nearMiddle and mob_nearMiddle ~= 0 then mob_nearMiddle:draw(1, 4) end
+  if mob_nearLeft and type(mob_nearLeft) == "table" then mob_nearLeft:draw(1, 1) end
+  if mob_nearMiddle and type(mob_nearMiddle) == "table" then mob_nearMiddle:draw(1, 2) end
+  if mob_nearRight and type(mob_nearRight) == "table" then mob_nearRight:draw(1, 3) end
+  if mob_nearMiddle and type(mob_nearMiddle) == "table" then mob_nearMiddle:draw(1, 4) end
   
 end
 
@@ -331,7 +340,7 @@ function drawMiniMap()
     end
   end
   love.graphics.pop()
-  love.graphics.print("(" .. px .. "," .. py .. ") Facing " .. player:get("direction"), 600, 325)
+  
   
 end
 
@@ -424,8 +433,22 @@ function uiViewEquip()
   skinui:addChild("winEq", btnClose)
 end
 
+function changeArea(index)
+  mobiles = {}
+  local md = worldControl:get("areas")[index]
+  if md then
+    mapdata = md:get("mapdata")
+    worldControl:set("currentArea", index)
+    return true;
+  end
+  return false;
+end
+
 function love.load()
   skinui:load()
+  
+  worldControl = World:new("dungeon")
+  changeArea(1)
   
   local cpanel = skinui.Window:new("winPanel", 480, 115, skinui.theme.default)
   cpanel:size(250, 295)
@@ -466,13 +489,10 @@ function love.load()
 
   -- Create Player
   player = Player:new("Player1")
-  player:set("x", 7)
-  player:set("y", 7)
+  player:set("x", 32)
+  player:set("y", 32)
   
-  -- Create a Mob
-  
-  newMob(Mobiles:new("Bunny", "bunny.png", 11, 6, mapdata))
-  
+
 end
 
 function newMob(m)
@@ -563,6 +583,70 @@ function movePlayer(dir, amt)
  
 end
 
+function changeEast()
+  local ar = worldControl:currentArea()
+  if ar:get("exits").east then
+    changeArea(ar:get("exits").east)
+  else
+    local na = Area:new(64, 64)
+    na:generate()
+    local naexit = na:get("exits")
+    naexit.west = worldControl:get("currentArea")
+    na:set("exits", naexit)
+    local exits = ar:get("exits")
+    exits.east = worldControl:addArea(na)
+    ar:set("exits", exits)
+    worldControl:setArea(worldControl:get("currentArea"), ar)
+    changeArea(exits.east)
+  end
+  player:set("x", 2)
+  
+end
+
+function changeWest()
+  
+  local ar = worldControl:currentArea()
+  if ar:get("exits").west then
+    changeArea(ar:get("exits").west)
+  else
+    local na = Area:new(64, 64)
+    na:generate()
+    local naexit = na:get("exits")
+    naexit.east = worldControl:get("currentArea")
+    na:set("exits", naexit)
+    local exits = ar:get("exits")
+    exits.west = worldControl:addArea(na)
+    ar:set("exits", exits)
+    changeArea(exits.west)
+  end
+  player:set("x", worldControl:currentArea():get("mapdata").width - 1)
+
+end
+
+function changeNorth()
+  
+  local ar = worldControl:currentArea()
+  if ar:get("exits").north then
+    changeArea(ar.exits.north)
+  else
+    local na = Area:new(64, 64)
+    na:generate()
+    worldControl:addArea(na)
+  end
+end
+
+function changeSouth()
+  
+  local ar = worldControl:currentArea()
+  if ar:get("exits").south then
+    changeArea(ar.exits.south)
+  else
+    local na = Area:new(64, 64)
+    na:generate()
+    worldControl:addArea(na)
+  end
+end
+
 function love.keypressed(key, scancode)
   skinui:keypressed(key, scancode)
   
@@ -570,6 +654,18 @@ function love.keypressed(key, scancode)
   local py = player:get("y")
   if key == "left" or key == "up" or key == "down" or key == "right" then
     movePlayer(key, 1)
+  end
+
+  if key == "up" or key == "down" then
+    if px == mapdata.layers[1].width then
+      changeEast()
+    elseif px == 1 then
+      changeWest()
+    elseif py == 1 then
+      changeNorth()
+    elseif py == mapdata.layers[1].height then
+      changeSouth()
+    end
   end
 
   if key == "f8" then

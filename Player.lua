@@ -4,6 +4,8 @@
  
 ]]--
 
+local Inventory require "Inventory"
+
 local Player = {}
 Player.__index = Player
 
