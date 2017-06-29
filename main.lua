@@ -1,12 +1,18 @@
-images = { }
+images = { 
+    tilesheets = {}
+  }
 player = { } 
-local mobiles = { } 
+mobiles = { } 
 tilemapping = {}
 
 skinui = require 'lib.SkinUI'
 
+function newMob(m)
+  table.insert(mobiles, m)
+end
+
 local Player = require 'Player'
-local Mobiles = require 'Mobile'
+Mobiles = require 'Mobile'
 mapdata = {}
 Area = require "Area"
 local World = require 'World'
@@ -103,7 +109,7 @@ function setMobCell(x, y, v)
   l = 2
   if x == nil or y == nil or x < 0 or y < 0 then return -1 end
   if x > mapdata.layers[l].width or y > mapdata.layers[l].height then return nil end
-  
+
   mapdata.layers[l].data[(y * mapdata.layers[l].width) + x + 1] = v
 
 end
@@ -341,6 +347,8 @@ function drawMiniMap()
   end
   love.graphics.pop()
   
+  local f = player:get("endurance") / player:get("endurance_max")
+  love.graphics.arc( "fill", 500, 55, 10, 0, (math.pi * 2) * f )
   
 end
 
@@ -434,11 +442,11 @@ function uiViewEquip()
 end
 
 function changeArea(index)
-  mobiles = {}
   local md = worldControl:get("areas")[index]
   if md then
     mapdata = md:get("mapdata")
     worldControl:set("currentArea", index)
+    md:generateMobs()
     return true;
   end
   return false;
@@ -471,9 +479,7 @@ function love.load()
   end
   btnHotbar2:set("text", "Equip.")
   skinui:addChild("winHotbar", btnHotbar2)
-  
-  images.tilesheets = {}
-  
+    
   -- Set Background
   images.background = love.graphics.newImage("images/nightsky.png")
   
@@ -495,15 +501,12 @@ function love.load()
 
 end
 
-function newMob(m)
-  table.insert(mobiles, m)
-end
-
 function love.update(dt)
 
   skinui:update(dt)
   screenShotter.update(dt)
   
+  player:update(dt)
   for i=1, #mobiles do
     
     mobiles[i]:update(dt)
@@ -528,6 +531,10 @@ function love.draw()
 end
 
 function movePlayer(dir, amt)
+  
+  if player:get("endurance") <= 0 then return end
+  
+  local moveCost = 0.1
   
   local oldx = player:get("x")
   local oldy = player:get("y")
@@ -580,6 +587,11 @@ function movePlayer(dir, amt)
     player:set("x", oldx)
     player:set("y", oldy)
   end
+  
+  
+  print(player:get("endurance"), player:get("endurance_max"))
+  if player:get("endurance") < player:get("endurance_rechargeRate") then return end
+  player:set("endurance", player:get("endurance") - moveCost)
  
 end
 
@@ -627,24 +639,40 @@ function changeNorth()
   
   local ar = worldControl:currentArea()
   if ar:get("exits").north then
-    changeArea(ar.exits.north)
+    changeArea(ar:get("exits").north)
   else
     local na = Area:new(64, 64)
     na:generate()
-    worldControl:addArea(na)
+    local naexit = na:get("exits")
+    naexit.south = worldControl:get("currentArea")
+    na:set("exits", naexit)
+    local exits = ar:get("exits")
+    exits.north = worldControl:addArea(na)
+    ar:set("exits", exits)
+    changeArea(exits.north)
   end
+  player:set("y", worldControl:currentArea():get("mapdata").height - 1)
+
 end
 
 function changeSouth()
   
   local ar = worldControl:currentArea()
   if ar:get("exits").south then
-    changeArea(ar.exits.south)
+    changeArea(ar:get("exits").south)
   else
     local na = Area:new(64, 64)
     na:generate()
-    worldControl:addArea(na)
+    local naexit = na:get("exits")
+    naexit.north = worldControl:get("currentArea")
+    na:set("exits", naexit)
+    local exits = ar:get("exits")
+    exits.south = worldControl:addArea(na)
+    ar:set("exits", exits)
+    changeArea(exits.south)
   end
+  player:set("y", 2)
+
 end
 
 function love.keypressed(key, scancode)

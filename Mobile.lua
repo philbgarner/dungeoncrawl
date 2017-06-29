@@ -9,6 +9,9 @@ Mobile.__index = Mobile
 
 function Mobile:new(name, filename, x, y, mapdata)
   
+  x = math.floor(x)
+  y = math.floor(y)
+  
   local itm = {
       
       props = {
@@ -54,8 +57,7 @@ function Mobile:loadSheet(id, file)
       ,{}
       ,{}
     }
-    
-  table.insert(tilemapping, id)
+
   images.tilesheets[id].image = love.graphics.newImage("images/" .. file)
   images.tilesheets[id][3][1] = love.graphics.newQuad(0, 0, 80, 120, images.tilesheets[id].image:getDimensions())
   images.tilesheets[id][3][2] = love.graphics.newQuad(160, 0, 80, 120, images.tilesheets[id].image:getDimensions())
@@ -112,7 +114,6 @@ function Mobile:move(drow, dcol)
     self:set("y", oldy)
     return
   end
-  
   setMobCell(oldx, oldy, 0)
   setMobCell(self:get("x"), self:get("y"), self)
 end
@@ -133,11 +134,11 @@ function Mobile:draw(row, col)
 end
 
 function Mobile:update(dt)
-  local mobUpdate = math.random() * 1000 + 1
+  local mobUpdate = math.random(1, 1000)
   local mx = 0
   local my = 0
-  local dir = math.floor(math.random() * 4 + 1)
-  
+  local dir = math.random(1, 4)
+
   if dir == 1 then
     mx = 1
   elseif dir == 2 then
@@ -147,8 +148,9 @@ function Mobile:update(dt)
   elseif dir == 4 then
     my = -1
   end
-  
+
   if mobUpdate > 990 then
+
     self:move(mx, my)
   end
 end

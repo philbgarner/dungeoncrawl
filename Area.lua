@@ -36,7 +36,7 @@ function Area:new(w, h, name, seed)
           name = name
           ,width = w
           ,height = h
-          ,terrain = "grassland"
+          ,terrain = "forest"
           ,seed = seed
           ,exits = {
               east = nil
@@ -60,28 +60,45 @@ function Area:load(filename)
   self:set("mapdata", md)
 end
 
+function Area:generateMobs()
+  
+  local number = math.random(1, 4)
+  for i=1, number do
+    local mx = math.random(16, 58)
+    local my = math.random(16, 58)
+  
+    newMob(Mobiles:new("Bunny", "bunny.png", mx, my, md))
+  end
+
+  
+end
+
 function Area:generate()
   print("generate")
   local base_candidates = {
         
     }
     
+  local md = self:get("mapdata")
+    
   self.props.mapdata.properties.generated = true
     
-  if self:get("terrain") == "grassland" then
+  if self:get("terrain") == "forest" then
     base_candidates = {
-        {id = 1, name = "grass", chance = 0.9 }
-        ,{id = 2, name = "tree_evergreen" }
+        {id = 1, chance = 0.8 }
+        ,{id = 6 }
       }
   end
-  
+  self.props.mapdata.layers[1].data = { }
   for i=1, self.props.width * self.props.height do
     if math.random() < base_candidates[1].chance then
-      table.insert(self.props.mapdata.layers[1].data, 1)
+      table.insert(self.props.mapdata.layers[1].data, base_candidates[1].id)
     else
-      table.insert(self.props.mapdata.layers[1].data, 2)
+      table.insert(self.props.mapdata.layers[1].data, base_candidates[2].id)
     end
   end
+  
+  
   
 end
 
