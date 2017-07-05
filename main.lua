@@ -376,6 +376,61 @@ function love.mousepressed(x, y, dx, dy, istouch)
   
 end
 
+function uiWorldmap()
+  skinui:remove("winWorldmap")
+  local winv = skinui.Window:new("winWorldmap", 15, 15, skinui.theme.default)
+  winv:size(500, 390)
+  skinui:add(winv)
+  
+  local btnClose = skinui.ButtonTiny:new("btnClose", 465, 5, skinui.theme.default)
+  btnClose:set("text", "X")
+  function btnClose:onclick()
+    skinui:remove("winWorldmap")
+  end
+  
+  function winv:ondraw()
+    
+    local colrs = {
+        
+        grassland =   {100, 200, 200, 255}
+        ,home =       {255, 255, 0, 255}
+        ,forest =     {25, 175, 25, 255}
+        ,none =       {0, 0, 0, 0}
+      }
+    
+    local cx = math.floor(self:get("left") + self:get("width") / 2) - 16
+    local cy = math.floor(self:get("top") + self:get("height") / 2) - 16
+    
+    local ar = worldControl:currentArea()
+    local tname = ar:get("terrain")
+
+    love.graphics.setColor(colrs[tname])
+    love.graphics.rectangle("line", cx, cy, 32, 32)
+    
+    tname = worldControl:get("areas")[ar:get("exits").west]
+    if tname then
+      tname = tname:get("terrain")
+    else
+      tname = "none"
+    end
+    love.graphics.setColor(colrs[tname])
+    love.graphics.rectangle("line", cx - 32, cy, 32, 32)
+    
+    tname = worldControl:get("areas")[ar:get("exits").east]
+    if tname then
+      tname = tname:get("terrain")
+    else
+      tname = "none"
+    end
+    love.graphics.setColor(colrs[tname])
+    love.graphics.rectangle("line", cx + 32, cy, 32, 32)
+    
+    love.graphics.setColor({255, 255, 255, 255})
+  end
+  
+  skinui:addChild("winWorldmap", btnClose)
+end
+
 function uiViewInventory()
   skinui:remove("winInv")
   local winv = skinui.Window:new("winInv", 75, 15, skinui.theme.default)
@@ -479,6 +534,13 @@ function love.load()
   end
   btnHotbar2:set("text", "Equip.")
   skinui:addChild("winHotbar", btnHotbar2)
+  
+  local btnHotbar3 = skinui.ButtonSmall:new("btnHotbar3", 150, 10, skinui.theme.default)
+  function btnHotbar3:onclick()
+    uiWorldmap()
+  end
+  btnHotbar3:set("text", "Map")
+  skinui:addChild("winHotbar", btnHotbar3)
     
   -- Set Background
   images.background = love.graphics.newImage("images/nightsky.png")
@@ -601,7 +663,8 @@ function changeEast()
     changeArea(ar:get("exits").east)
   else
     local na = Area:new(64, 64)
-    na:generate()
+    local terrainName = ar:get("mapdata").properties.terrain_type
+    na:generate(terrainName, "east")
     local naexit = na:get("exits")
     naexit.west = worldControl:get("currentArea")
     na:set("exits", naexit)
@@ -622,7 +685,8 @@ function changeWest()
     changeArea(ar:get("exits").west)
   else
     local na = Area:new(64, 64)
-    na:generate()
+    local terrainName = ar:get("mapdata").properties.terrain_type
+    na:generate(terrainName, "west")
     local naexit = na:get("exits")
     naexit.east = worldControl:get("currentArea")
     na:set("exits", naexit)
@@ -642,7 +706,8 @@ function changeNorth()
     changeArea(ar:get("exits").north)
   else
     local na = Area:new(64, 64)
-    na:generate()
+    local terrainName = ar:get("mapdata").properties.terrain_type
+    na:generate(terrainName, "north")
     local naexit = na:get("exits")
     naexit.south = worldControl:get("currentArea")
     na:set("exits", naexit)
@@ -662,7 +727,8 @@ function changeSouth()
     changeArea(ar:get("exits").south)
   else
     local na = Area:new(64, 64)
-    na:generate()
+    local terrainName = ar:get("mapdata").properties.terrain_type
+    na:generate(terrainName, "south")
     local naexit = na:get("exits")
     naexit.north = worldControl:get("currentArea")
     na:set("exits", naexit)

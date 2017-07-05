@@ -11,6 +11,7 @@ return {
   nextobjectid = 1,
   properties = {
     ["generated"] = false
+    ,["terrain_type"] = "home"
   },
   tilesets = {
     {

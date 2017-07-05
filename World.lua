@@ -34,7 +34,6 @@ end
 
 function World:currentArea()
   return self:get("areas")[self:get("currentArea")]
-  
 end
 
 function World:addArea(area)
