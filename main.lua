@@ -397,38 +397,44 @@ function uiWorldmap()
         ,forest =     {25, 175, 25, 255}
         ,none =       {0, 0, 0, 0}
       }
+    local arealist = {}
+
+    function drawarea(area, x, y)
+      arealist[area] = {id = area, x=x, y=y}
+
+      local ar = worldControl:get("areas")[area]
+      if ar:get("exits").east and not arealist[ar:get("exits").east] then
+        drawarea(ar:get("exits").east, x + 32, y)
+      end
+      if ar:get("exits").west and not arealist[ar:get("exits").west] then
+        drawarea(ar:get("exits").west, x - 32, y)
+      end
+      if ar:get("exits").south and not arealist[ar:get("exits").south] then
+        drawarea(ar:get("exits").south, x, y + 32)
+      end
+      if ar:get("exits").north and not arealist[ar:get("exits").north] then
+        drawarea(ar:get("exits").north, x, y - 32)
+      end
+      local tname = ar:get("terrain")
+      if tname == "home" then return end      
+    end
     
     local cx = math.floor(self:get("left") + self:get("width") / 2) - 16
     local cy = math.floor(self:get("top") + self:get("height") / 2) - 16
+    drawarea(worldControl:get("currentArea"), cx, cy)
     
-    local ar = worldControl:currentArea()
-    local tname = ar:get("terrain")
-
-    love.graphics.setColor(colrs[tname])
-    love.graphics.rectangle("line", cx, cy, 32, 32)
-    
-    tname = worldControl:get("areas")[ar:get("exits").west]
-    if tname then
-      tname = tname:get("terrain")
-    else
-      tname = "none"
+    for i=1, #arealist do
+      local ar = worldControl:get("areas")[i]
+      local tname = ar:get("terrain")
+      love.graphics.setColor(colrs[tname])
+      love.graphics.rectangle("fill", arealist[i].x, arealist[i].y, 32, 32)
     end
-    love.graphics.setColor(colrs[tname])
-    love.graphics.rectangle("line", cx - 32, cy, 32, 32)
-    
-    tname = worldControl:get("areas")[ar:get("exits").east]
-    if tname then
-      tname = tname:get("terrain")
-    else
-      tname = "none"
-    end
-    love.graphics.setColor(colrs[tname])
-    love.graphics.rectangle("line", cx + 32, cy, 32, 32)
-    
     love.graphics.setColor({255, 255, 255, 255})
+    
   end
-  
+    
   skinui:addChild("winWorldmap", btnClose)
+
 end
 
 function uiViewInventory()
