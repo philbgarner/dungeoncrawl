@@ -5,6 +5,11 @@ player = { }
 mobiles = { } 
 tilemapping = {}
 
+-- Main UI Icons
+
+local imgMoveEnergy = love.graphics.newImage("images/boot_24x24.png")
+local imgHPIcon = love.graphics.newImage("images/heart_24x24.png")
+
 skinui = require 'lib.SkinUI'
 
 function newMob(m)
@@ -15,6 +20,8 @@ local Player = require 'Player'
 Mobiles = require 'Mobile'
 mapdata = {}
 Area = require "Area"
+Item = require "Item"
+Inventory = require "Inventory"
 local World = require 'World'
 
 local worldControl = nil
@@ -347,9 +354,16 @@ function drawMiniMap()
   end
   love.graphics.pop()
   
-  local f = player:get("endurance") / player:get("endurance_max")
-  love.graphics.arc( "fill", 500, 55, 10, 0, (math.pi * 2) * f )
+  love.graphics.draw(imgMoveEnergy, 485, 45)
+  love.graphics.draw(imgHPIcon, 485, 80)
   
+  love.graphics.setColor(200, 200, 0, 255)     
+  local f = player:get("endurance") / player:get("endurance_max")
+  love.graphics.arc( "fill", 525, 58, 10, 0, (math.pi * 2) * f )
+  love.graphics.setColor(0, 25, 155, 255)     
+  love.graphics.arc( "fill", 525, 58, 9, 0, (math.pi * 2) * (f - 0.02) )
+  love.graphics.setColor(255, 255, 255, 255)     
+
 end
 
 function love.mousemoved(x, y, dx, dy, istouch)
@@ -392,9 +406,10 @@ function uiWorldmap()
     
     local colrs = {
         
-        grassland =   {100, 200, 200, 255}
-        ,home =       {255, 255, 0, 255}
+        grassland =   {25, 200, 100, 255}
+        ,home =       {175, 75, 0, 255}
         ,forest =     {25, 175, 25, 255}
+        ,desert =     {255, 225, 25, 255}
         ,none =       {0, 0, 0, 0}
       }
     local arealist = {}
@@ -429,8 +444,22 @@ function uiWorldmap()
       love.graphics.setColor(colrs[tname])
       love.graphics.rectangle("fill", arealist[i].x, arealist[i].y, 32, 32)
     end
-    love.graphics.setColor({255, 255, 255, 255})
+    love.graphics.setColor({255, 255, 0, 255})
+    if love.timer.getTime() % 1 > 0.5 then
+      love.graphics.rectangle("line", arealist[worldControl:get("currentArea")].x, arealist[worldControl:get("currentArea")].y, 32, 32)
+    end
+
     
+    local dy = 20
+    for key, value in pairs(colrs) do
+      if key ~= "none" then
+        love.graphics.setColor(colrs[key])
+        love.graphics.rectangle("fill",  self:get("left") + 15,  self:get("top") + dy + 5, 35, 15)
+        love.graphics.print(key, self:get("left") + 55, self:get("top") + dy + 5)
+        dy = dy + 20
+      end
+    end
+    love.graphics.setColor({255, 255, 255, 255})
   end
     
   skinui:addChild("winWorldmap", btnClose)
@@ -504,6 +533,7 @@ end
 
 function changeArea(index)
   local md = worldControl:get("areas")[index]
+  message("Entering area '" .. md:get("terrain") .. "'.")
   if md then
     mapdata = md:get("mapdata")
     worldControl:set("currentArea", index)
@@ -513,15 +543,31 @@ function changeArea(index)
   return false;
 end
 
+function message(msg)
+  local panel = skinui:get("winPanel")
+  if not panel then return end
+  local id = panel:find("lstStatus")
+  local lstStatus = panel:get("windows")[id]
+  if not lstStatus then return end
+  lstStatus:add(msg)  
+  --lstStatus:scroll(lstStatus:count() - 10)
+end
+
 function love.load()
+  love.graphics.setFont(love.graphics.newFont("alagard.ttf", 14))
+  
   skinui:load()
   
   worldControl = World:new("dungeon")
-  changeArea(1)
   
   local cpanel = skinui.Window:new("winPanel", 480, 115, skinui.theme.default)
   cpanel:size(250, 295)
   skinui:add(cpanel)
+  
+  local status = skinui.Listbox:new("lstStatus", 5, 0, 250, 290, skinui.theme.default)
+  skinui:addChild("winPanel", status)
+    
+  changeArea(1)
   
   local hotbar = skinui.Window:new("winHotbar", 0, 360, skinui.theme.default)
   hotbar:size(480, 50)
@@ -560,6 +606,9 @@ function love.load()
   loadTile("tree_evergreen", "tree_evergreen.png")
   loadTile("water", "water.png")
   loadTile("grave_cross", "grave_cross.png")
+  loadTile("rocky_grass", "rocky_grass.png")
+  loadTile("grass_flowers", "grass_flowers.png")
+  loadTile("desert", "desert.png")
 
   -- Create Player
   player = Player:new("Player1")
@@ -652,6 +701,9 @@ function movePlayer(dir, amt)
   
   local tid = getTile(player:get("x"), player:get("y"))
   if getTileProps(tid).solid or getMobCell(player:get("x"), player:get("y")) ~= 0 then
+    if type(getMobCell(player:get("x"), player:get("y"))) == "table" then
+      message ("Bumped into a " .. getMobCell(player:get("x"), player:get("y")):get("name") .. ".")
+    end
     player:set("x", oldx)
     player:set("y", oldy)
   end

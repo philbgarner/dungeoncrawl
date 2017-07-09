@@ -72,6 +72,8 @@ function Area:generateMobs()
       newMob(Mobiles:new("Bunny", "bunny.png", mx, my, md))
     elseif self:get("terrain") == "grassland" then
       newMob(Mobiles:new("Bunny", "bunny.png", mx, my, md))
+    elseif self:get("terrain") == "desert" then
+      newMob(Mobiles:new("Bunny", "bunny.png", mx, my, md))
     end
   end
 
@@ -86,6 +88,9 @@ function Area:generate(type_from, dir_to)
   local tileid_map = {
       grass = 1
       ,tree = 6
+      ,rocky_grass = 9
+      ,grass_flowers = 10
+      ,sand = 11
     }
     
   --[[
@@ -109,16 +114,70 @@ function Area:generate(type_from, dir_to)
   local terrain_types = {
       home = {
         forest = {
-          north = 0.3
-          ,south = 0.3
-          ,east = 0.3
-          ,west =  0.3
+          north = 0.2
+          ,south = 0.2
+          ,east = 0.2
+          ,west =  0.2
         }
         ,grassland = {
           north = 0.7
           ,south = 0.7
           ,east = 0.7
           ,west =  0.7
+        }
+        ,desert = {
+          north = 0.1
+          ,south = 0.1
+          ,east = 0.1
+          ,west =  0.1
+        }
+      }
+      ,grassland = {
+        forest = {
+          north = 0.4
+          ,south = 0.4
+          ,east = 0.4
+          ,west =  0.4
+        }
+        ,grassland = {
+          north = 0.5
+          ,south = 0.5
+          ,east = 0.5
+          ,west =  0.5
+        }
+        ,desert = {
+          north = 0.1
+          ,south = 0.1
+          ,east = 0.1
+          ,west =  0.1
+        }
+      }
+      ,forest = {
+        forest = {
+          north = 0.8
+          ,south = 0.8
+          ,east = 0.8
+          ,west =  0.8
+        }
+        ,grassland = {
+          north = 0.2
+          ,south = 0.2
+          ,east = 0.2
+          ,west =  0.2
+        }
+      }
+      ,desert = {
+        desert = {
+          north = 0.7
+          ,south = 0.7
+          ,east = 0.7
+          ,west =  0.7
+        }
+        ,grassland = {
+          north = 0.3
+          ,south = 0.3
+          ,east = 0.3
+          ,west =  0.3
         }
       }
     }
@@ -144,11 +203,22 @@ function Area:generate(type_from, dir_to)
   self:set("terrain", name)
   if name == "grassland" then
     table.insert(base_candidates, {id = tileid_map["grass"], name = name})
+    table.insert(base_candidates, {id = tileid_map["grass"], name = name})
+    table.insert(base_candidates, {id = tileid_map["grass"], name = name})
+    table.insert(base_candidates, {id = tileid_map["grass"], name = name})
+    table.insert(base_candidates, {id = tileid_map["grass_flowers"], name = name})
+    table.insert(base_candidates, {id = tileid_map["rocky_grass"], name = name})
   elseif name == "forest" then
     table.insert(base_candidates, {id = tileid_map["grass"], name = name})
     table.insert(base_candidates, {id = tileid_map["grass"], name = name})
     table.insert(base_candidates, {id = tileid_map["grass"], name = name})
+    table.insert(base_candidates, {id = tileid_map["grass"], name = name})
+    table.insert(base_candidates, {id = tileid_map["grass_flowers"], name = name})
+    table.insert(base_candidates, {id = tileid_map["rocky_grass"], name = name})
     table.insert(base_candidates, {id = tileid_map["tree"], name = name})
+    table.insert(base_candidates, {id = tileid_map["tree"], name = name})
+  elseif name == "desert" then
+    table.insert(base_candidates, {id = tileid_map["sand"], name = name})
   end
 
   self.props.mapdata.layers[1].data = { }
