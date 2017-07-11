@@ -4,6 +4,7 @@ images = {
 player = { } 
 mobiles = { } 
 tilemapping = {}
+shaders = {}
 
 -- Main UI Icons
 
@@ -28,6 +29,26 @@ local worldControl = nil
 
 local screenShotter = require 'Screenshotter.capture'
 
+shaders.sineDistort = [[
+  const float PI = 3.1415926535;
+  extern float time;
+  extern float radius;
+  extern float fadeout_cutoff;
+
+  vec4 effect( vec4 color, Image texture, vec2 texture_coords, vec2 screen_coords)
+  {
+    vec2 p = texture_coords;
+
+    p.y += sin(p.x * PI * radius) * time;
+    
+    vec4 c = Texel(texture, p);
+    if (time > fadeout_cutoff)
+    {
+      c.a = 1 - (time - fadeout_cutoff) * 10;
+    }
+    return c;
+  }
+]]
 
 function drawTile(id, row, col)
   if row > mapdata.layers[1].height or col > mapdata.layers[1].width or not id then return end
