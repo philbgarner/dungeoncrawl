@@ -76,9 +76,12 @@ function Window:get(prop)
 end
 
 function Window:find(id) 
+  print ("find", id)
   local wnd = self:get("windows")
   for i=1, #wnd do
+    print(">", wnd[i]:get("id"), id)
     if wnd[i]:get("id") == id then
+      print("*** found index: ", i, "for", id, " in window ", self:get("id"))
       return i
     end
   end
@@ -131,6 +134,7 @@ function Window:click(x, y, button, istouch)
   local wnd = self:get("windows")
   local wx = self:get("left")
   local wy = self:get("top")
+  if not wnd then return end
   for i=1, #wnd do
     if x >= wnd[i]:get("left") + wx and y >= wnd[i]:get("top") + wy and x <= wnd[i]:get("left") + wnd[i]:get("width") + wx and y <= wnd[i]:get("top") + wnd[i]:get("height") + wy then
       wnd[i]:click(x - wx, y - wy, button, istouch)
@@ -348,7 +352,7 @@ function Window:update(dt, dx, dy)
   end
 
   local wins = self:get("windows")
-
+  if not wins then return end
   if #wins > 0 then
     for i=#wins, 1, -1 do
       wins[i]:update(dt)
@@ -360,7 +364,7 @@ function Window:keypressed(key, scancode)
   if self:get("hidden") then return end
 
   local wins = self:get("windows")
-
+  if not wins then return end
   if #wins > 0 then
     for i=1, #wins do
       if wins[i]:get("hasFocus") then
@@ -397,14 +401,15 @@ function Window:draw()
   love.graphics.draw(self:get("canvas"), self:get("left"), self:get("top"))
 
   local wins = self:get("windows")
-
+  
+  self:ondraw()
+  if not wins then return end
   if #wins > 0 then
     for i=#wins, 1, -1 do
       wins[i]:draw(self:get("left"), self:get("top"))
     end
   end
-  
-  self:ondraw()
+
   love.graphics.setScissor(scx, scy, scw, sch)
 end
 

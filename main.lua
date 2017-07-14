@@ -23,6 +23,7 @@ mapdata = {}
 Area = require "Area"
 Item = require "Item"
 Inventory = require "Inventory"
+local item_defs = require "GameItems"
 local World = require 'World'
 
 local worldControl = nil
@@ -49,6 +50,19 @@ shaders.sineDistort = [[
     return c;
   }
 ]]
+
+function ItemFactory(name, image, props)
+  
+  if not props then props = {} end
+  local itm = Item:new(image, name)
+  
+  for key, value in props do
+    itm:set(key, value)
+  end
+
+  return itm
+  
+end
 
 function drawTile(id, row, col)
   if row > mapdata.layers[1].height or col > mapdata.layers[1].width or not id then return end
@@ -488,16 +502,80 @@ function uiWorldmap()
 end
 
 function uiViewInventory()
+  
   skinui:remove("winInv")
   local winv = skinui.Window:new("winInv", 75, 15, skinui.theme.default)
   winv:size(225, 275)
+  winv:set("imgSlot", love.graphics.newImage("images/item_outline.png"))
   skinui:add(winv)
   
-  local btnClose = skinui.ButtonTiny:new("btnClose", 195, 5, skinui.theme.default)
+  local btnClose = skinui.ButtonTiny:new("btnClose", winv:get("width") - 30, 5, skinui.theme.default)
   btnClose:set("text", "X")
   function btnClose:onclick()
     skinui:remove("winInv")
   end
+  function btnClose:update(dt)
+    self:set("left", winv:get("width") - 30)
+  end
+  
+  function winv:ondraw()
+    btnClose:update(0)
+    if not player:get("inventory") then return end
+    local inv = player:get("inventory")
+    local dx = 0
+    local dy = 0
+    local wx = self:get("left") + 25
+    local wy = self:get("top") + 54
+    for si=1, inv:max_slots() do
+      local el = inv:get(si)
+      love.graphics.setColor(255, 255, 255, 75)
+      love.graphics.draw(self:get("imgSlot"), dx + wx, dy + wy)
+      love.graphics.setColor(255, 255, 255, 255)
+      dx = dx + 34
+      if dx > self:get("width") - 64 then
+        dx = 0
+        dy = dy + 34
+        if dy > self:get("height") - 128 then
+          break
+        end
+      end
+    end
+  end
+  
+  function winv:onresize()
+    
+    if not player:get("inventory") then return end
+    local inv = player:get("inventory")
+    local dx = 0
+    local dy = 0
+    local wx = 24
+    local wy = 54
+    for si=1, inv:max_slots() do
+      local el = inv:get(si)
+      if el then
+        local imgItem = skinui.Image:new("imgItem" .. si, dx + wx, dy + wy, skinui.theme.default)
+        function imgItem:onclick()
+          message("Equipped " .. el.name .. ".")
+          skinui:removeChild("winInv", imgItem:get("id"))
+          player:set("weapon", el)
+          inv:remove(si)
+          if skinui:find("winEq") then uiViewEquip() end
+        end
+        imgItem:set("image", el:get("image"))
+        skinui:addChild("winInv", imgItem)
+      end
+      dx = dx + 34
+      if dx > self:get("width") - 64 then
+        dx = 0
+        dy = dy + 34
+        if dy > self:get("height") - 128 then
+          break
+        end
+      end
+    end
+  end
+
+  winv:resize()
   
   local btnDrop = skinui.ButtonSmall:new("btnDrop", 10, 10, skinui.theme.default)
   btnDrop:set("text", "Drop")
@@ -511,8 +589,9 @@ end
 
 function uiViewEquip()
   skinui:remove("winEq")
-  local winEq = skinui.Window:new("winEq", 75, 15, skinui.theme.default)
+  local winEq = skinui.Window:new("winEq", 480, 115, skinui.theme.default)
   winEq:size(225, 275)
+  winEq:set("fixed", true)
   skinui:add(winEq)
   
   local imgOutline = skinui.Image:new("imgOutline", 75, 25, skinui.theme.default)
@@ -521,8 +600,8 @@ function uiViewEquip()
   local imgItemSlot1 = skinui.Image:new("imgItemSlot1", 65, 25, skinui.theme.default)
   imgItemSlot1:set("image", "images/item_outline.png")
   
-  local imgItemSlot2 = skinui.Image:new("imgItemSlot2", 40, 120, skinui.theme.default)
-  imgItemSlot2:set("image", "images/item_outline.png")
+  local imgWeapon = skinui.Image:new("imgWeapon", 40, 120, skinui.theme.default)
+  imgWeapon:set("image", "images/item_outline.png")
   
   local imgItemSlot3 = skinui.Image:new("imgItemSlot3", 150, 115, skinui.theme.default)
   imgItemSlot3:set("image", "images/item_outline.png")
@@ -539,8 +618,24 @@ function uiViewEquip()
     skinui:remove("winEq")
   end
   
+  if player:get("weapon") then
+    imgWeapon:set("image", player:get("weapon"):get("image"))
+  end
+  
+  function imgWeapon:onclick()
+    local inv = player:get("inventory")
+    
+    inv:add(player:get("weapon"))
+    player:set("weapon", nil)
+    
+    if skinui:find("winInv") then
+      skinui:get("winInv"):onresize()
+    end
+    uiViewEquip()
+  end
+    
   skinui:addChild("winEq", imgItemSlot1)
-  skinui:addChild("winEq", imgItemSlot2)
+  skinui:addChild("winEq", imgWeapon)
   skinui:addChild("winEq", imgItemSlot3)
   skinui:addChild("winEq", imgItemSlot4)
   skinui:addChild("winEq", imgItemSlot5)
@@ -633,9 +728,9 @@ function love.load()
 
   -- Create Player
   player = Player:new("Player1")
+  player:get("inventory"):add(Item:new("images/items/swordWood.png", "Wooden Sword"))
   player:set("x", 32)
   player:set("y", 32)
-  
 
 end
 
@@ -653,8 +748,6 @@ function love.update(dt)
 end
 
 function love.draw()
-  
-
   
   love.graphics.push()
   love.graphics.scale(3, 3)

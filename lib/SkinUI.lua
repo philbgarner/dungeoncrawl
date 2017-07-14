@@ -61,6 +61,30 @@ function skinui:addChild(id, obj)
   skinui.windows[index]:set("windows", win)
 end
 
+
+function skinui:removeChild(id, objid)
+  print("removing " .. id .. "." .. objid)
+  local par = skinui:get(id)
+  print("parent", par)
+  if not par then return end
+  print("searching " , par , " for " , objid)
+  local obj = par:find(objid)
+  print("obj", objid, obj)
+  if obj then
+    local wins = {}
+    print("removing count: " .. #par.props.windows)
+    for i=1, #par.props.windows do
+      if i ~= obj then
+        table.insert(wins, par.props.windows[i])
+      else
+        print("removeChild: dropped #" .. i)
+      end
+    end
+    skinui.windows[skinui:find(id)]:set("windows", wins)
+  end
+end
+
+
 function skinui:find(id) 
   for i=1, #skinui.windows do
     if skinui.windows[i]:get("id") == id then

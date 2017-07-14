@@ -4,7 +4,7 @@
  
 ]]--
 
-local Inventory require "Inventory"
+local Inventory = require "Inventory"
 
 local Player = {}
 Player.__index = Player
@@ -19,10 +19,16 @@ function Player:new(name)
           ,endurance_max = 5
           ,endurance_rechargeRate = 0.25
           ,direction = "up"
+          ,weapon = nil
+          ,shield = nil
+          ,helm = nil
+          ,torso = nil
         }
     
     }
   setmetatable(itm, Player)
+  itm.props.inventory = Inventory:new(24)
+
   return itm
   
 end
