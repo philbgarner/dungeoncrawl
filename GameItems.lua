@@ -1,5 +1,7 @@
 return {
     
-    ["Wooden Sword"] = { "images/items/swordWood.png", "Wooden Sword" }
-  
+    weapon = {
+      ["Wooden Sword"] = { "images/items/swordWood.png", "Wooden Sword" }
+    }
+    
   }

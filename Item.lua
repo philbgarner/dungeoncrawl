@@ -7,11 +7,11 @@
 local Item = {}
 Item.__index = Item
 
-function Item:new(image, name)
+function Item:new(image, name, itemtype)
   local itm = {
       name = name
       ,props = {
-
+          itemtype = itemtype
         }
     
     }

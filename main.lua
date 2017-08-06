@@ -54,7 +54,7 @@ shaders.sineDistort = [[
 function ItemFactory(name, image, props)
   
   if not props then props = {} end
-  local itm = Item:new(image, name)
+  local itm = Item:new(image, name, props.itemtype)
   
   for key, value in props do
     itm:set(key, value)
@@ -557,7 +557,7 @@ function uiViewInventory()
         function imgItem:onclick()
           message("Equipped " .. el.name .. ".")
           skinui:removeChild("winInv", imgItem:get("id"))
-          player:set("weapon", el)
+          player:equip(el)
           inv:remove(si)
           if skinui:find("winEq") then uiViewEquip() end
         end
@@ -597,20 +597,20 @@ function uiViewEquip()
   local imgOutline = skinui.Image:new("imgOutline", 75, 25, skinui.theme.default)
   imgOutline:set("image", "images/equip_outline.png")
  
-  local imgItemSlot1 = skinui.Image:new("imgItemSlot1", 65, 25, skinui.theme.default)
-  imgItemSlot1:set("image", "images/item_outline.png")
+  local imgHelmet = skinui.Image:new("imgHelmet", 65, 25, skinui.theme.default)
+  imgHelmet:set("image", "images/item_outline.png")
   
   local imgWeapon = skinui.Image:new("imgWeapon", 40, 120, skinui.theme.default)
   imgWeapon:set("image", "images/item_outline.png")
   
-  local imgItemSlot3 = skinui.Image:new("imgItemSlot3", 150, 115, skinui.theme.default)
-  imgItemSlot3:set("image", "images/item_outline.png")
+  local imgShield = skinui.Image:new("imgShield", 150, 115, skinui.theme.default)
+  imgShield:set("image", "images/item_outline.png")
   
-  local imgItemSlot4 = skinui.Image:new("imgItemSlot4", 45, 210, skinui.theme.default)
-  imgItemSlot4:set("image", "images/item_outline.png")
+  local imgLegs = skinui.Image:new("imgLegs", 45, 210, skinui.theme.default)
+  imgLegs:set("image", "images/item_outline.png")
   
-  local imgItemSlot5 = skinui.Image:new("imgItemSlot5", 95, 75, skinui.theme.default)
-  imgItemSlot5:set("image", "images/item_outline.png")
+  local imgTorso = skinui.Image:new("imgTorso", 95, 75, skinui.theme.default)
+  imgTorso:set("image", "images/item_outline.png")
 
   local btnClose = skinui.ButtonTiny:new("btnClose", 195, 5, skinui.theme.default)
   btnClose:set("text", "X")
@@ -620,6 +620,15 @@ function uiViewEquip()
   
   if player:get("weapon") then
     imgWeapon:set("image", player:get("weapon"):get("image"))
+  end
+  if player:get("shield") then
+    imgShield:set("image", player:get("shield"):get("image"))
+  end
+  if player:get("helmet") then
+    imgHelmet:set("image", player:get("helmet"):get("image"))
+  end
+  if player:get("torso") then
+    imgTorso:set("image", player:get("torso"):get("image"))
   end
   
   function imgWeapon:onclick()
@@ -634,11 +643,68 @@ function uiViewEquip()
     uiViewEquip()
   end
     
-  skinui:addChild("winEq", imgItemSlot1)
+  function imgShield:onclick()
+    
+    local inv = player:get("inventory")
+    
+    inv:add(player:get("shield"))
+    player:set("shield", nil)
+    
+    if skinui:find("winInv") then
+      skinui:get("winInv"):onresize()
+    end
+    uiViewEquip()
+    
+  end
+  
+  function imgHelmet:onclick()
+    
+    local inv = player:get("inventory")
+    
+    inv:add(player:get("helmet"))
+    player:set("helmet", nil)
+    
+    if skinui:find("winInv") then
+      skinui:get("winInv"):onresize()
+    end
+    uiViewEquip()
+    
+  end
+  
+  
+  function imgTorso:onclick()
+    
+    local inv = player:get("inventory")
+    
+    inv:add(player:get("torso"))
+    player:set("torso", nil)
+    
+    if skinui:find("winInv") then
+      skinui:get("winInv"):onresize()
+    end
+    uiViewEquip()
+    
+  end
+  
+  function imgLegs:onclick()
+    
+    local inv = player:get("inventory")
+    
+    inv:add(player:get("legs"))
+    player:set("legs", nil)
+    
+    if skinui:find("winInv") then
+      skinui:get("winInv"):onresize()
+    end
+    uiViewEquip()
+    
+  end
+    
+  skinui:addChild("winEq", imgHelmet)
   skinui:addChild("winEq", imgWeapon)
-  skinui:addChild("winEq", imgItemSlot3)
-  skinui:addChild("winEq", imgItemSlot4)
-  skinui:addChild("winEq", imgItemSlot5)
+  skinui:addChild("winEq", imgShield)
+  skinui:addChild("winEq", imgLegs)
+  skinui:addChild("winEq", imgTorso)
   
   skinui:addChild("winEq", imgOutline)
   
@@ -728,7 +794,10 @@ function love.load()
 
   -- Create Player
   player = Player:new("Player1")
-  player:get("inventory"):add(Item:new("images/items/swordWood.png", "Wooden Sword"))
+  player:get("inventory"):add(Item:new("images/items/swordWood.png", "Wooden Sword", "weapon"))
+  player:get("inventory"):add(Item:new("images/items/shieldSmall.png", "Small Shield", "shield"))
+  player:get("inventory"):add(Item:new("images/items/helmet.png", "Helm", "helmet"))
+  player:get("inventory"):add(Item:new("images/items/armor.png", "Plate Armor", "armor"))
   player:set("x", 32)
   player:set("y", 32)
 

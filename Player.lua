@@ -41,6 +41,22 @@ function Player:set(prop, val)
   
 end
 
+function Player:equip(item)
+  
+  if item:get("itemtype") == "weapon" then
+    player:set("weapon", item)
+  elseif item:get("itemtype") == "shield" then
+    player:set("shield", item)
+  elseif item:get("itemtype") == "helmet" then
+    player:set("helmet", item)
+  elseif item:get("itemtype") == "armor" then
+    player:set("torso", item)
+  elseif item:get("itemtype") == "legs" then
+    player:set("legs", item)
+  end
+  
+end
+
 function Player:get(prop)
     
   if self.props[prop] == nil then
